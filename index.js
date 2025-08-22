@@ -11,4 +11,4 @@ const embedding = await openai.embeddings.create({
   encoding_format: 'float',
 });
 
-console.log(embedding);
+console.log(JSON.stringify(embedding.data));
