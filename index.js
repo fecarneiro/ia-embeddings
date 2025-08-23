@@ -6,6 +6,7 @@ config();
 const openai = new OpenAI();
 openai.apiKey = process.env.OPENAI_API_KEY;
 
+
 async function createEmbedding(inputFile) {
   try {
     // 1. Receive input
@@ -16,8 +17,10 @@ async function createEmbedding(inputFile) {
       input: inputData,
       encoding_format: 'float',
     });
+    const result = embedding.data
+
     // 3. Save output on new file
-    await fs.writeFile('result.txt', JSON.stringify(embedding), 'utf-8');
+    await fs.writeFile('result.json', JSON.stringify(result), 'utf-8');
     console.log('Embedding generated successfully.');
   } catch (err) {
     console.log(err);
