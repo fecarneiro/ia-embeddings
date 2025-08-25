@@ -6,25 +6,33 @@ config();
 const openai = new OpenAI();
 openai.apiKey = process.env.OPENAI_API_KEY;
 
-
-async function createEmbedding(inputFile) {
+async function createEmbeddingList(itemList) {
   try {
-    // 1. Receive input
-    const inputData = await fs.readFile(inputFile, 'utf-8');
-    // 2. Call openai embedding API
     const embedding = await openai.embeddings.create({
-      model: 'text-embedding-3-large',
-      input: inputData,
+      model: 'text-embedding-3-small',
+      input: itemList,
       encoding_format: 'float',
     });
-    const result = embedding.data
 
-    // 3. Save output on new file
-    await fs.writeFile('result.json', JSON.stringify(result), 'utf-8');
+    const result = embedding.data;
+
+    const itemWithEmbeddingRef = result.map((embedingObj, i) => ({
+      item: itemList[i],
+      embedding: embedingObj.embedding,
+    }));
+
+    // Save output on new file
+    await fs.writeFile(
+      'result.json',
+      JSON.stringify(itemWithEmbeddingRef, null, 2),
+      'utf-8'
+    );
     console.log('Embedding generated successfully.');
   } catch (err) {
     console.log(err);
   }
 }
 
-createEmbedding('example.txt');
+const itemList = ['shark', 'pizza', 'eleven'];
+
+createEmbeddingList(itemList);
