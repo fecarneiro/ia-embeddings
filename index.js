@@ -8,37 +8,45 @@ const openai = new OpenAI();
 openai.apiKey = process.env.OPENAI_API_KEY;
 
 // Create embedding list
-async function createEmbeddingList(itemList) {
+async function createEmbeddingList(inputList) {
   try {
     const embedding = await openai.embeddings.create({
       model: 'text-embedding-3-large',
-      input: itemList,
+      input: inputList,
       encoding_format: 'float',
     });
 
-    const result = embedding.data;
+    const openaiResult = embedding.data;
 
-    const itemWithEmbeddingRef = result.map((embedingObj, i) => ({
-      item: itemList[i],
+    const embeddedItemList = openaiResult.map((embedingObj, i) => ({
+      item: inputList[i],
       embedding: embedingObj.embedding,
     }));
 
     await fs.writeFile(
       'result.json',
-      JSON.stringify(itemWithEmbeddingRef, null, 2),
+      JSON.stringify(embeddedItemList, null, 2),
       'utf-8'
     );
     console.log('Embedding generated successfully.');
-    return itemWithEmbeddingRef;
+    return embeddedItemList;
   } catch (err) {
     console.log(err);
   }
 }
 
+// normalize vector
+function normalize(v) {
+  const norm = Math.hypot(...v) || 1;
+  return v.map((x) => x / norm);
+}
+
+// dot product
+
 // User input
 const userInput = 'maçã';
 
 // Compare input with cosine similarity
-async function compare(userInput, itemWithEmbeddingRef) {}
+async function compare(userInput, embeddedItemList) {}
 
-createEmbeddingList(itemList);
+createEmbeddingList(inputList);
