@@ -9,18 +9,29 @@ openai.apiKey = process.env.OPENAI_API_KEY;
 
 // Create embedding list
 async function createEmbeddingList(inputList) {
+  // try to reuse cached embeddings
+  try {
+    const raw = await fs.readFile('result.json', 'utf-8').catch(() => null);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && parsed.length === inputList.length) {
+        console.log('Loaded embeddings from result.json (cache).');
+        return parsed;
+      }
+    }
+  } catch (e) {
+    // ignore and recreate
+  }
+
   try {
     const embedding = await openai.embeddings.create({
       model: 'text-embedding-3-large',
       input: inputList,
-      encoding_format: 'float',
     });
-
     const openaiResult = embedding.data;
 
     const embeddedItemList = openaiResult.map((embedingObj, i) => ({
       item: inputList[i],
-      // normalize each embedding to allow dot product = cosine similarity
       embedding: normalize(embedingObj.embedding),
     }));
 
@@ -29,7 +40,7 @@ async function createEmbeddingList(inputList) {
       JSON.stringify(embeddedItemList, null, 2),
       'utf-8'
     );
-    console.log('Embedding generated successfully.');
+    console.log('Embedding generated and saved to result.json.');
     return embeddedItemList;
   } catch (err) {
     console.log(err);
@@ -56,17 +67,30 @@ async function compare(userInput, embeddedItemList, topK = 3) {
     const emb = await openai.embeddings.create({
       model: 'text-embedding-3-large',
       input: userInput,
-      encoding_format: 'float',
     });
     const userEmbedding = normalize(emb.data[0].embedding);
 
+    // debug: check norms and sample dims
+    console.log(
+      'userEmbedding norm (should ≈1):',
+      Math.hypot(...userEmbedding)
+    );
+    embeddedItemList.forEach((it) => {
+      console.log(
+        it.item,
+        'norm:',
+        Math.hypot(...it.embedding),
+        'sample:',
+        it.embedding.slice(0, 5)
+      );
+    });
+
     const scores = embeddedItemList.map((it) => ({
       item: it.item,
-      score: dot(userEmbedding, it.embedding), // since both normalized, dot = cosine
+      score: dot(userEmbedding, it.embedding),
     }));
 
     const top = scores.sort((a, b) => b.score - a.score).slice(0, topK);
-
     console.log('Top similar items:', top);
     return top;
   } catch (err) {
@@ -75,8 +99,9 @@ async function compare(userInput, embeddedItemList, topK = 3) {
   }
 }
 
-// User input
-const userInput = 'peixe';
+// CLI input (ex: node index.js "peixe" 3)
+const userInput = process.argv[2] ?? 'chocolate';
+const topK = parseInt(process.argv[3], 10) || 3;
 
 // run: create embeddings then compare
-createEmbeddingList(itemList).then((list) => compare(userInput, list));
+createEmbeddingList(itemList).then((list) => compare(userInput, list, topK));
