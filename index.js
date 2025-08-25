@@ -76,7 +76,7 @@ async function compare(userInput, embeddedItemList, topK = 3) {
 }
 
 // User input
-const userInput = 'maçã';
+const userInput = 'peixe';
 
 // run: create embeddings then compare
 createEmbeddingList(itemList).then((list) => compare(userInput, list));

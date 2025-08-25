@@ -1,1 +1,1 @@
-export const itemList = ['shark', 'pizza', 'eleven'];
+export const itemList = ['chocolate', 'pizza', 'chipamzé'];
